@@ -2,10 +2,14 @@
 
 LightEffect_PerPixels: 
 Create a 2d Soft glow light effect onto a pygame surface (32 bit PNG file encoded with alpha channels transparency). 
-The file radial4.png is a radial mask controling the shape and light intensity of the illuminated area.
+The file radial4.png is a radial mask controlling the shape and light intensity of the illuminated area.
 
 LightEffect_SurfaceAlpha: 
-This script is generating a soft glow ligh onto a pygame surface (32 - 24 bit, with or without alpha channel transparency). 
+This script generate a soft light onto a pygame surface (32 - 24 bit, with or without alpha channel transparency). 
 
-Nota for the executable to work:
-Copy all the PNG files into the same directory than the executable files.
+LightDemo available, 6 light sources with variable radiance and flickering  aspect
+
+Nota for the executables to work:
+Copy all the PNG files into the same directory and run the files
+
+Please men
