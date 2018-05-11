@@ -84,16 +84,21 @@ def soft_radial_light(rgb1_: numpy.array, alpha2_: pygame.Color, color_index_) -
         color = gradient(index_=color_index_)
 
     if SHADOW:
-        # display a soft shadow with the mask alpha
+        # display a soft shadow using the mask alpha.
+        # use set_alpha() to change the pixel transparency value,
+        # otherwise the animation will be pitch black
+        # e.g texture1.set_alpha(255) (main loop)
         color = LIGHT_SHADE[:3]
         new_array = numpy.subtract(rgb1_, color)
     else:
-        new_array = numpy.add(rgb1_, color * LIGHT_INTENSITY, dtype=numpy.float).astype(numpy.uint16)
+        new_array = numpy.multiply(rgb1_, alpha2_ * LIGHT_INTENSITY * numpy.array(color),
+                                   dtype=numpy.float).astype(numpy.uint16)
 
     if LIGHT_FLICKERING:
         if random.randint(0, 1000) > 900:
-            new_array = numpy.add(rgb1_, tuple(c // 2 for c in color))
-            pass
+            new_array = numpy.multiply(rgb1_, LIGHT_INTENSITY * numpy.array(color) / 2,
+                                       dtype=numpy.float)
+
     # Cap the maximum to 255
     putmask(new_array, new_array > 255, 255)
     putmask(new_array, new_array < 0, 0)
@@ -192,19 +197,19 @@ if __name__ == '__main__':
     surface2 = 'radial4.png'
     texture2 = pygame.image.load(surface2).convert_alpha()
     # lit area (x=200, y=200)
-    LIGHT_SIZE_EFFECT = (400, 400)
+    LIGHT_SIZE_EFFECT = (300, 300)
     # set the light color and intensity
     LIGHT_SHADE = pygame.Color(220, 220, 220)
     texture2 = pygame.transform.smoothscale(texture2, LIGHT_SIZE_EFFECT)
     ALPHA2 = pygame.surfarray.array_alpha(texture2)
     # Reshape the array to work from a 3d array instead of 2d
     ALPHA2_RESHAPE = ALPHA2.reshape((LIGHT_SIZE_EFFECT[0], LIGHT_SIZE_EFFECT[1], 1))
-    LIGHT_FLICKERING = False
+    LIGHT_FLICKERING = True
     LIGHT_VARIANCE = True
     SHADOW = False
     GRAD_END_COLOR = pygame.Color(150, 160, 201, 0) # 188, 195, 255)
     GRAD_START_COLOR = pygame.Color(20, 20, 20, 255)
-    LIGHT_INTENSITY = 0.4
+    LIGHT_INTENSITY = 0.0001# 0.4
 
     pygame.display.flip()
     

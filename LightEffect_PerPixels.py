@@ -64,10 +64,16 @@ def soft_radial_light(rgb1_: numpy.array, alpha2_: pygame.Color, color_index_) -
     assert isinstance(LIGHT_SHADE, pygame.Color), \
         'Expecting pygame.Color for argument Light_shade got %s ' % type(LIGHT_SHADE)
 
-    color = LIGHT_SHADE[:3]  
-    blend = numpy.multiply(rgb1_ * 1, alpha2_ * color * 0.00051, dtype=numpy.float16).astype(numpy.uint16)
+    color = LIGHT_SHADE[:3]
+
+    if LIGHT_VARIANCE:
+        color = gradient(index_=color_index_)
+
+    blend = numpy.multiply(rgb1_, alpha2_ * LIGHT_INTENSITY * color,
+                           dtype=numpy.float16).astype(numpy.uint16)
+
     numpy.putmask(blend, blend > 255, 255)
-    new_array = numpy.add(rgb1_, blend, dtype=numpy.uint16)
+    new_array = numpy.add(rgb1_, blend, dtype=numpy.float16) # dtype=numpy.uint16)
     # Cap the maximum to 255
     putmask(new_array, new_array > 255, 255)
     putmask(new_array, new_array < 0, 0)
@@ -182,11 +188,12 @@ if __name__ == '__main__':
     ALPHA2 = pygame.surfarray.array_alpha(texture2)
     # Reshape the array to work from a 3d array instead of 2d
     ALPHA2_RESHAPE = ALPHA2.reshape((LIGHT_SIZE_EFFECT[0], LIGHT_SIZE_EFFECT[1], 1))
-    LIGHT_FLICKERING = False
-    LIGHT_VARIANCE = False
-    SHADOW = False
-    GRAD_END_COLOR = pygame.Color(10, 0, 201, 0) # 188, 195, 255)
-    GRAD_START_COLOR = pygame.Color(20, 20, 20, 255)
+
+    LIGHT_VARIANCE = True
+
+    GRAD_END_COLOR = pygame.Color(128, 128, 250, 255)
+    GRAD_START_COLOR = pygame.Color(80, 80, 80, 255)
+    LIGHT_INTENSITY = 0.0008
 
     pygame.display.flip()
     
