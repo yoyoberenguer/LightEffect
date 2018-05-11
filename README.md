@@ -7,9 +7,9 @@ The file radial4.png is a radial mask controlling the shape and light intensity 
 LightEffect_SurfaceAlpha: 
 This script generate a soft light onto a pygame surface (32 - 24 bit, with or without alpha channel transparency). 
 
-LightDemo available, 6 light sources with variable radiance and flickering  aspect
+LightDemo available:
+Create 6 light sources with variable radiance and flickering  aspect
 
 Nota for the executables to work:
 Copy all the PNG files into the same directory and run the files
 
-Please men
