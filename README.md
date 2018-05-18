@@ -1,3 +1,5 @@
+
+
 # LightEffect
 
 This program creates 2D light effects onto a pygame surface/image (32 bit PNG file encoded with
@@ -23,6 +25,9 @@ Version 2 changes :
     LoadTextureFile.py
     Shadow.py
     LightDemo.py
+    
+DEMO available in the directory dist
+***** The assets directory must be in the same location than the executable file 
 
 Have a nice journey
 
