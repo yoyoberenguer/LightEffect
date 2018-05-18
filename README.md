@@ -45,7 +45,7 @@ furnished to do so, subject to the following conditions:
 The above copyright notice and this permission notice shall be included in all
 copies or substantial portions of the Software.
 
-Please acknowledge the source code and give reference if using the source code included in this project.
+Please acknowledge and give reference if using the source code for your project.
 
 --------------------------------------------------------------------------------------------------------------------
 
