@@ -8,7 +8,7 @@ The files radial4.png, RadialTrapezoid, RadialWarning are controlling the shape 
 of the illuminated area (radial masks).
 
 The algorithm can be easily implemented into a 2D game (top down or horizontal/vertical scrolling) to enhanced
-the atmosphere and lighting environment.
+the lighting ambiance.
 
 Version 2 changes :
 
