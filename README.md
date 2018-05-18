@@ -3,7 +3,7 @@
 # LightEffect
 
 This program creates 2D light effects onto a pygame surface/image (32 bit PNG file encoded with
-alpha channels transparency).
+alpha channels transparency) and generate shadow.
 The files radial4.png, RadialTrapezoid, RadialWarning are controlling the shape and light intensity
 of the illuminated area (radial masks).
 
