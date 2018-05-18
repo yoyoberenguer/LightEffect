@@ -1,15 +1,45 @@
 # LightEffect
 
-LightEffect_PerPixels: 
-Create a 2d Soft glow light effect onto a pygame surface (32 bit PNG file encoded with alpha channels transparency). 
-The file radial4.png is a radial mask controlling the shape and light intensity of the illuminated area.
+This program creates 2D light effects onto a pygame surface/image (32 bit PNG file encoded with
+alpha channels transparency).
+The files radial4.png, RadialTrapezoid, RadialWarning are controlling the shape and light intensity
+of the illuminated area (radial masks).
 
-LightEffect_SurfaceAlpha: 
-This script generate a soft light onto a pygame surface (32 - 24 bit, with or without alpha channel transparency). 
+The algorithm can be easily implemented into a 2D game (top down or horizontal/vertical scrolling) to enhanced
+the atmosphere and lighting environment.
 
-LightDemo available:
-Create 6 light sources with variable radiance and flickering  aspect
+Version 2 changes :
 
-Nota for the executables to work:
-Copy all the PNG files into the same directory and run the files
+ - Added volumetric effect (animated smoke or plasma) in the illuminated area to set a specific ambiance.
+        This effect can also be used for generating force field around a set point.
+
+ - Added warning light (rotational lighting)
+
+ - Implemented shadow projection effects from a light source coordinates (See file Shadows.py for more details and
+        credit to Marcus Møller for its shadow algorithms (https://github.com/marcusmoller).
+
+ - Code cleanup and split the code into different modules
+    Constant.py
+    LoadTextureFile.py
+    Shadow.py
+    LightDemo.py
+
+Have a nice journey
+
+This code comes with a MIT license.
+
+Copyright (c) 2018 Yoann Berenguer
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+Please acknowledge the source code and give reference if using the source code included in this project.
+
+--------------------------------------------------------------------------------------------------------------------
 
