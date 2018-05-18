@@ -1,67 +1,109 @@
 """
+--------------------------------------------------------------------------------------------------------------------
+This program creates 2D light effects onto a pygame surface/image (32 bit PNG file encoded with
+alpha channels transparency).
+The files radial4.png, RadialTrapezoid, RadialWarning are controlling the shape and light intensity
+of the illuminated area (radial masks).
 
-                   GNU GENERAL PUBLIC LICENSE
+The algorithm can be easily implemented into a 2D game (top down or horizontal/vertical scrolling) to enhanced
+the atmosphere and lighting environment.
 
-                       Version 3, 29 June 2007
+This code comes with a MIT license.
 
+Copyright (c) 2018 Yoann Berenguer
 
- Copyright (C) 2007 Free Software Foundation, Inc. <http://fsf.org/>
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
 
- Everyone is permitted to copy and distribute verbatim copies
+Please acknowledge the source code and give reference if using the source code included in this project.
 
- of this license document, but changing it is not allowed.
- """
+--------------------------------------------------------------------------------------------------------------------
+
+Version 2 changes :
+
+ - Added volumetric effect (animated smoke or plasma) in the illuminated area to set a specific ambiance.
+        This effect can also be used for generating force field around a set point.
+
+ - Added warning light (rotational lighting)
+
+ - Implemented shadow projection effects from a light source coordinates (See file Shadows.py for more details and
+        credit to Marcus Møller for its shadow algorithms (https://github.com/marcusmoller).
+
+ - Code cleanup and split the code into different modules
+    Constant.py
+    LoadTextureFile.py
+    Shadow.py
+    LightDemo.py
+
+Have a nice journey
+"""
+
 
 __author__ = "Yoann Berenguer"
 __copyright__ = "Copyright 2007."
 __credits__ = ["Yoann Berenguer"]
 __license__ = "MIT License"
-__version__ = "1.0.0"
+__version__ = "2.0.0"
 __maintainer__ = "Yoann Berenguer"
 __email__ = "yoyoberenguer@hotmail.com"
 __status__ = "Demo"
 
-import pygame
 import numpy
-from numpy import putmask, dstack, transpose, array, arange, repeat, newaxis
-import timeit
+from numpy import putmask, array, arange, repeat, newaxis
 import random
 import threading
-
-
-def make_array(rgb_array_: numpy.ndarray, alpha_: numpy.ndarray) -> numpy.ndarray:
-    assert isinstance(rgb_array_, numpy.ndarray), \
-        'Expecting numpy.ndarray for argument rgb_array_ got %s ' % type(rgb_array_)
-    assert isinstance(alpha_, numpy.ndarray), \
-        'Expecting numpy.ndarray for argument alpha_ got %s ' % type(alpha_)
-
-    return numpy.dstack((rgb_array_, alpha_)).astype(dtype=numpy.uint8)
-
-
-def make_surface(rgba_array: numpy.ndarray) -> pygame.Surface:
-    assert isinstance(rgba_array, numpy.ndarray), 'Expecting numpy.ndarray for ' \
-                                                  'argument rgb_array got %s ' % type(rgba_array)
-
-    return pygame.image.frombuffer((rgba_array.transpose(1, 0, 2)).copy(order='C').astype(numpy.uint8),
-                                   (rgba_array.shape[:2][0], rgba_array.shape[:2][1]), 'RGBA')
+from Constants import *
+from Shadows import Shadow
 
 
 class CreateLight(object):
+    """ Define light source properties and methods."""
 
     def __init__(self, light_name_, light_shape_, light_shade_, alpha_mask_, light_flickering_, light_variance_,
-                 shadow_, start_color_gradient_, end_color_gradient_, light_intensity_, position_):
+                 light_rotating_, light_volume_, start_color_gradient_, end_color_gradient_,
+                 light_intensity_, position_, volume_, mouse_=False):
+
+        assert isinstance(light_name_, str), 'Expecting str for ' \
+                                             'argument light_name_ got %s ' % type(light_name_)
+        assert isinstance(light_shape_, tuple), 'Expecting tuple for ' \
+                                                'argument light_shape_ got %s ' % type(light_shape_)
+        assert isinstance(light_shade_, pygame.Color), 'Expecting pygame.Color for ' \
+                                                       'argument light_shade_ got %s ' % type(light_shade_)
+        assert isinstance(alpha_mask_, (numpy.ndarray, list)), 'Expecting numpy.ndarray or list for ' \
+                                                               'argument alpha_mask_ got %s ' % type(alpha_mask_)
+        assert isinstance(light_flickering_, bool), 'Expecting bool for ' \
+                                                    'argument light_flickering_ got %s ' % type(light_flickering_)
+        assert isinstance(light_variance_, bool), 'Expecting bool for ' \
+                                                  'argument light_variance_ got %s ' % type(light_variance_)
+
+        # Light source properties (see module Constants.py for more details about the light source creation)
         self.light_name = light_name_
         self.light_shape = light_shape_
         self.light_shade = light_shade_
         self.alpha_mask = alpha_mask_
         self.light_flickering = light_flickering_
         self.light_variance = light_variance_
-        self.shadow = shadow_
+        self.light_rotating = light_rotating_
+        self.light_volume = light_volume_
         self.start_color_gradient = start_color_gradient_
         self.end_color_gradient = end_color_gradient_
         self.light_intensity = light_intensity_
         self.position = position_
+        self.volume = volume_
         self._id = id(self)
+        self.counter = 0
+        self.dt = 0
+
+        self.mouse = mouse_
+        # time between frames default 0ms
+        # If animation is lagging, increase self.timing e.g 33ms
+        self.timing = 0
 
     def gradient(self, index_: int):
         """ create a color gradient """
@@ -77,228 +119,275 @@ class CreateLight(object):
                         dtype=numpy.float).astype(dtype=numpy.uint8)
         return row[index_]
 
+    def get_light_spot(self):
+        """ return numpy.arrays and sizes representing the area flood with light. """
+
+        # Light source position (x, y)
+        x = self.position[0]
+        y = self.position[1]
+
+        # radius
+        lx = self.light_shape[0] // 2
+        ly = self.light_shape[1] // 2
+
+        # Squaring the light source
+        (w_low, w_high) = lx, lx
+        (h_low, h_high) = ly, ly
+
+        # Reshaping if close to the border(s).
+        if x < lx:
+            w_low = x
+        elif x > SIZE[1] - lx:
+            w_high = SIZE[1] - x
+
+        if y < ly:
+            h_low = y
+        elif y > SIZE[1] - ly:
+            h_high = SIZE[1] - y
+
+        if isinstance(self.alpha_mask, list):
+            mask = self.alpha_mask[0]
+        else:
+            mask = self.alpha_mask
+
+        surface_chunk = RGB1[x - w_low:x + w_high, y - h_low:y + h_high, :]
+        alpha_chunk = mask[lx - w_low:lx + w_high, ly - h_low:ly + h_high, :]
+        surface_size = (w_low + w_high, h_low + h_high)
+
+        return surface_chunk, alpha_chunk, surface_size
+
     def spotlight(self, rgb_array: numpy.array, alpha_array: pygame.Color, color_index_) -> pygame.Surface:
         """
-        Add light effect to a selected area and return a pygame surface
-        The light color & intensity can be change anytime by modifying Light_shade variable
+        Represent the light source with all its properties. (Variance, flickering aspect, rotating light,
+        volume)
 
-        :param rgb_array: numpy.ndarray representing the selected area receiving the source light
-        :param alpha_array: numpy.ndarray representing the mask alpha (radial light intensity)
-        :param color_index_:
-        :return: pygame.Surface, self explanatory
+        :param rgb_array: numpy.ndarray representing the area flood with light
+        :param alpha_array: numpy.ndarray representing the mask alpha (radial light intensity, check the mask type)
+        :param color_index_: Index for the color gradient.
+        :return: pygame.Surface, light source effect representation.
         """
         assert isinstance(rgb_array, numpy.ndarray), \
             'Expecting numpy.ndarray for argument rgb_array got %s ' % type(rgb_array)
         assert isinstance(alpha_array, numpy.ndarray), \
             'Expecting numpy.ndarray for argument alpha_array got %s ' % type(alpha_array)
+        assert isinstance(color_index_, int), \
+            'Expecting int for argument color_index_ got %s ' % type(color_index_)
 
         color = self.light_shade[:3]
 
+        # progressive color change from two distinct colors (see Constants.py e.g LIGHT definition.)
         if self.light_variance:
             color = self.gradient(index_=color_index_)
 
-        if self.shadow:
-            new_array = numpy.subtract(rgb_array, color)
-        else:
-            new_array = numpy.multiply(rgb_array, alpha_array * self.light_intensity * numpy.array(color),
-                                       dtype=numpy.float).astype(numpy.uint16)
+        # self explanatory
+        elif self.light_flickering:
+            if random.randint(0, 1000) > 950:
+                color = numpy.array(color) / 2
 
-        if self.light_flickering:
-            if random.randint(0, 1000) > 900:
-                new_array = numpy.multiply(rgb_array, self.light_intensity * numpy.array(color) / 2 * alpha_array
-                                           ,dtype=numpy.float)
+        # Rotate the light with pre-calculated masks alpha.
+        if self.light_rotating:
+            if isinstance(self.alpha_mask, list):
+                alpha_array = self.alpha_mask[self.counter % (len(self.alpha_mask) - 1)]
 
+        # Add texture to the light for volumetric aspect.
+        # The texture is loaded in the main loop and played sequentially (self.counter)
+        elif self.light_volume and not self.mouse:
+            volume_array = pygame.surfarray.array3d(self.volume[self.counter % len(self.volume)])
+            volume_array[:, :, :] = volume_array[:, :, :] // 25
+
+        # default arguments
+        args = alpha_array * self.light_intensity * color if not self.light_volume else\
+            alpha_array * self.light_intensity * color * volume_array
+
+        # light resultant calculation
+        new_array = numpy.multiply(rgb_array, args, dtype=numpy.float).astype(numpy.uint16)
+
+        # Cap the the array
         putmask(new_array, new_array > 255, 255)
         putmask(new_array, new_array < 0, 0)
-        return make_surface(make_array(new_array, alpha_array))
+
+        # Build a 3d array (model RGB + A)
+        new = numpy.dstack((new_array, alpha_array)).astype(dtype=numpy.uint8)
+        # Create a pygame surface
+        return pygame.image.frombuffer(new.transpose(1, 0, 2).copy('C').astype(numpy.uint8),
+                                       (new.shape[:2][0], new.shape[:2][1]), 'RGBA')
+
+    def flickering(self, rgb_array, alpha_array):
+        assert isinstance(rgb_array, numpy.ndarray), \
+            'Expecting numpy.ndarray for argument rgb_array got %s ' % type(rgb_array)
+        assert isinstance(alpha_array, numpy.ndarray), \
+            'Expecting numpy.ndarray for argument alpha_array got %s ' % type(alpha_array)
+
+        color = numpy.array(self.light_shade[:3]) / 2
+        new_array = numpy.multiply(rgb_array, alpha_array * self.light_intensity * color,
+                                   dtype=numpy.float).astype(numpy.uint16)
+        putmask(new_array, new_array > 255, 255)
+        putmask(new_array, new_array < 0, 0)
+        new = numpy.dstack((new_array, alpha_array)).astype(dtype=numpy.uint8)
+        return pygame.image.frombuffer(new.transpose(1, 0, 2).copy('C').astype(numpy.uint8),
+                                       (new.shape[:2][0], new.shape[:2][1]), 'RGBA')
+
+    def offset_calculation(self):
+        w, h = self.image.get_width(), self.image.get_height()
+        if (w, h) != self.light_shape:
+            self.offset = pygame.math.Vector2(x=self.light_shape[0] - w
+            if self.position[0] <= SCREENRECT.centerx // 2 else (self.light_shape[0] - w) * -1,
+                                              y=self.light_shape[1] - h if self.position[1] <= SCREENRECT.centery // 2
+                                              else (self.light_shape[1] - h) * -1)
 
 
 class ShowLight(pygame.sprite.Sprite, CreateLight):
     containers = None
     images = None
-    _mouse_control = False
 
     def __init__(self, light_settings):
 
         pygame.sprite.Sprite.__init__(self, self.containers)
         CreateLight.__init__(self, *light_settings)
 
-        assert isinstance(self.images, pygame.Surface), \
-            'Expecting pygame.Surface for argument self.images, got %s ' % type(self.images)
-
-        self.images_copy = self.images.copy()
-        self.image = self.images_copy[0] if isinstance(self.images_copy, list) else self.images_copy
         assert isinstance(SCREENRECT, pygame.Rect), \
             '\n[-] SCREENRECT must be a pygame.Rect'
-        self.rect = self.image.get_rect(midbottom=(-100, -100))
+
+        print('[+] %s started' % self.light_name)
+
+        self.offset = pygame.math.Vector2(0, 0)
+
+        self.image = ShowLight.images
+        self.rect = self.image.get_rect()
+
+        self.chunk, self.alpha, surface_size = self.get_light_spot()
+        if not self.mouse:
+            if self.light_volume:
+                i = 0
+                for surface in self.volume:
+                    self.volume[i] = pygame.transform.smoothscale(surface, (surface_size[0], surface_size[1]))
+                    i += 1
+
+            self.image = self.spotlight(self.chunk, self.alpha, 0)
+            self.image_copy = self.image.copy()
+
+            if self.light_flickering:
+                self.image_flickering = self.flickering(self.chunk, self.alpha)
+
+            self.offset_calculation()
+
+        self.rect = self.image.get_rect(center=self.position + self.offset // 2)
         self.color_index = 0
         self.factor = 1
-        self.mouse_control = self._mouse_control
 
     def update(self):
 
-        if self.mouse_control:
-            mouse_x = pygame.mouse.get_pos()[0]
-            mouse_y = pygame.mouse.get_pos()[1]
-            ShowLight._mouse_control = False
-        else:
-            mouse_x = self.position[0]
-            mouse_y = self.position[1]
+        if self.dt > self.timing:
 
-        lx = self.light_shape[0] // 2
-        ly = self.light_shape[1] // 2
+            # mouse cursor is a dynamic light source
+            if self.mouse:
+                self.position = MOUSE_POS
+                self.chunk, self.alpha, surface_size = self.get_light_spot()
+                self.image = self.spotlight(self.chunk, self.alpha, 0)
+                self.offset = pygame.math.Vector2(0, 0)
+                self.offset_calculation()
+                self.rect = self.image.get_rect(center=self.position + self.offset // 2)
 
-        # set the default values
-        (w_low, w_high) = lx, lx  # map(lambda x: x // 2, light_size_effect)
-        (h_low, h_high) = ly, ly  # map(lambda x: x // 2, light_size_effect)
+            # static light source
+            else:
 
-        # alter the default values according to
-        # the mouse (x, y) coordinates.
-        if mouse_x < lx:
-            w_low = mouse_x
-        elif mouse_x > size[1] - lx:
-            w_high = size[1] - mouse_x
-        # print(w_low, w_high)
+                # following effects require a constant re-calculation of the light flooded area.
+                if self.light_variance or self.light_rotating or self.light_volume:
+                    self.image = self.spotlight(self.chunk, self.alpha, self.color_index)
 
-        if mouse_y < ly:
-            h_low = mouse_y
-        elif mouse_y > size[1] - ly:
-            h_high = size[1] - mouse_y
-        # copy a portion of the screen
-        chunk = RGB1[mouse_x - w_low:mouse_x + w_high, mouse_y - h_low:mouse_y + h_high, :]
-        # select the entire mask alpha or just a portion, depends on the mouse coordinates.
-        alpha = self.alpha_mask[lx - w_low:lx + w_high, ly - h_low:ly + h_high, :]
+                elif self.light_flickering:
+                    if random.randint(0, 1000) > 950:
+                        self.image = self.image_flickering
+                    else:
+                        self.image = self.image_copy
 
-        # chunk size must be > 0
-        if chunk.size > 0:
-            self.image = self.spotlight(chunk, alpha, self.color_index)
+                self.rect = self.image.get_rect(center=self.position + self.offset // 2)
 
-        self.rect.topleft = (mouse_x - w_low, mouse_y - h_low)
-        self.color_index += self.factor
-        if self.color_index >= 255 or self.color_index <= 0:
-            self.factor *= -1
-        pass
+                self.color_index += self.factor
+                if self.color_index >= 255 or self.color_index <= 0:
+                    self.factor *= -1
+
+                self.dt = 0
+                self.counter += 1
+
+        self.dt += TIME_PASSED_SECONDS
 
 
 if __name__ == '__main__':
 
     numpy.set_printoptions(threshold=numpy.nan)
 
-    pygame.init()
-    # Map size
-    size = (600, 600)
-    SCREENRECT = pygame.Rect((0, 0), size)
-    screen = pygame.display.set_mode(SCREENRECT.size, pygame.RESIZABLE, 32)
-    # path to the background picture
-    # background = pygame.image.load('background.png').convert()
-    # background = pygame.transform.smoothscale(background, size)
-    # screen.blit(background, (0, 0))
-    screen.fill((0, 0, 0, 0))
-
-    surface1 = 'Base1.png'
-    texture1 = pygame.image.load(surface1).convert()
-    texture1 = pygame.transform.smoothscale(texture1, size)
-    texture1.set_alpha(20)
-    screen.blit(texture1, (0, 0))
+    SCREEN.blit(TEXTURE1, (0, 0))
     pygame.display.flip()
 
-    RGB1 = pygame.surfarray.array3d(texture1)
-    mask_alpha = pygame.image.load('radial4.png').convert_alpha()
-    light_shape = (300, 300)
-    light_area = pygame.transform.smoothscale(mask_alpha, light_shape)
-    sub_alpha = pygame.surfarray.array_alpha(light_area)
-    sub_alpha_reshape = sub_alpha.reshape(*light_shape, 1)
-
-    light1 = ('Spotlight1', light_shape, pygame.Color(150, 160, 201, 0), sub_alpha_reshape,
-              True, False, False, pygame.Color(150, 160, 201, 0), pygame.Color(20, 20, 20, 255),
-              1e-4, (370, 94))
-
-    light2 = ('Spotlight2', light_shape, pygame.Color(165, 162, 180, 0), sub_alpha_reshape,
-              False, True, False, pygame.Color(150, 160, 201, 0), pygame.Color(150, 160, 201, 0),
-              2e-4, (370, 186))
-
-    light_shape = (300, 180)
-    light_area = pygame.transform.smoothscale(mask_alpha, light_shape)
-    sub_alpha = pygame.surfarray.array_alpha(light_area)
-    sub_alpha_reshape = sub_alpha.reshape(*light_shape, 1)
-    light3 = ('Spotlight3', light_shape, pygame.Color(150, 160, 201, 0), sub_alpha_reshape,
-              True, True, False, pygame.Color(150, 160, 201, 0), pygame.Color(22, 25, 35, 0),
-              0.8e-4, (88, 357))
-
-    light_shape = (400, 400)
-    light_area = pygame.transform.smoothscale(mask_alpha, light_shape)
-    sub_alpha = pygame.surfarray.array_alpha(light_area)
-    sub_alpha_reshape = sub_alpha.reshape(*light_shape, 1)
-    light4 = ('Spotlight4', light_shape, pygame.Color(200, 50, 61, 0), sub_alpha_reshape,
-              False, True, False, pygame.Color(220, 98, 101, 0), pygame.Color(30, 5, 8, 0),
-              0.7e-4, (480, 269))
-
-    light_shape = (400, 400)
-    light_area = pygame.transform.smoothscale(mask_alpha, light_shape)
-    sub_alpha = pygame.surfarray.array_alpha(light_area)
-    sub_alpha_reshape = sub_alpha.reshape(*light_shape, 1)
-    light6 = ('Spotlight6', light_shape, pygame.Color(200, 200, 10, 0), sub_alpha_reshape,
-              False, True, False, pygame.Color(220, 220, 10, 0), pygame.Color(18, 18, 0, 0),
-              1e-4, (0, 0))
-
-    light_shape = (600, 600)
-    mask_alpha = pygame.image.load('radialTrapezoid.png').convert_alpha()
-    light_area = pygame.transform.smoothscale(mask_alpha, light_shape)
-    sub_alpha = pygame.surfarray.array_alpha(light_area)
-    sub_alpha_reshape = sub_alpha.reshape(*light_shape, 1)
-    light5 = ('Spotlight5', light_shape, pygame.Color(200, 200, 200, 0), sub_alpha_reshape,
-              False, True, False, pygame.Color(220, 210, 212, 0), pygame.Color(20, 20, 21, 0),
-              1.3e-4, SCREENRECT.center)
-
-    light_group = pygame.sprite.Group()
+    LIGHT_GROUP = pygame.sprite.Group()
     All = pygame.sprite.RenderUpdates()
-    ShowLight.images = pygame.Surface((10, 10), 32)
-    ShowLight.containers = light_group, All
+    ShowLight.containers = LIGHT_GROUP, All
+    # create a dummy surface
+    ShowLight.images = pygame.Surface((1, 1), 32)
 
-    threading.Timer(random.randint(3, 7), ShowLight, args=(light1,)).start()
-    ShowLight(light2)
-    threading.Timer(random.randint(1, 5), ShowLight, args=(light3,)).start()
-    ShowLight(light4)
+    for light in LIGHTS:
 
-    threading.Timer(random.randint(2, 7), ShowLight, args=(light5,)).start()
-    ShowLight._mouse_control = True
-    ShowLight(light6)
+        if light[0] == 'Spotlight5':
+            threading.Timer(random.randint(2, 7), ShowLight, args=(light,)).start()
+        else:
+            ShowLight(light)
 
-    # threading.Timer(1, MySprite1, args=((370, 184), (300, 300), pygame.Color(100, 100, 220))).start()
+    def segment_adjustment(polygon):
+        segments = ALL_SEGMENTS.copy()
+        for seg in polygon:
+            segments.remove(seg)
+        return segments
 
-    STOP_GAME = False
-    PAUSE = False
-    FRAME = 0
+
+    # list(map(lambda x: LIGHT1_SEGMENTS.remove(x), list(POLYGON2)))
+
+    # Project shadows for specific light sources
+    shadows = [Shadow(segment_adjustment(POLYGON2), static_=True, location_=(370, 94)),    # LIGHT1
+               Shadow(segment_adjustment(POLYGON1), static_=True, location_=(150, 185)),   # LIGHT6
+               Shadow(ALL_SEGMENTS, static_=True, location_=(333, 595))                    # LIGHT5
+               ]
+
     clock = pygame.time.Clock()
-    TIME_PASSED_SECONDS = 0
 
     while not STOP_GAME:
 
-        while PAUSE:
-            for event in pygame.event.get():
-                keys = pygame.key.get_pressed()
-                # print(keys)
-                if keys[pygame.K_PAUSE]:
-                    PAUSE = False
+        pygame.event.pump()
 
-        for event in pygame.event.get():  # User did something
+        while PAUSE:
+            event = pygame.event.wait()
+            keys = pygame.key.get_pressed()
+            if keys[pygame.K_PAUSE]:
+                PAUSE = False
+                pygame.event.clear()
+                keys = None
+            break
+
+        for event in pygame.event.get():
+
             keys = pygame.key.get_pressed()
 
-            if event.type == pygame.QUIT:
+            if event.type == pygame.QUIT or keys[pygame.K_ESCAPE]:
                 print('Quitting')
                 STOP_GAME = True
-            if keys[pygame.K_SPACE]:
-                pass
+
+            elif event.type == pygame.MOUSEMOTION:
+                MOUSE_POS = event.pos
 
             elif keys[pygame.K_PAUSE]:
                 PAUSE = True
-                print('Pauseed')
+                print('Paused')
 
-        screen.fill((0, 0, 0, 0))
-        # screen.blit(background, (0, 0))
-        screen.blit(texture1, (0, 0))
+        SCREEN.fill((0, 0, 0, 0))
+        SCREEN.blit(TEXTURE1, (0, 0))
+
+        for shadow in shadows:
+            shadow.update(MOUSE_POS)
+            shadow.render_frame()
+
         All.update()
-        All.draw(screen)
+        All.draw(SCREEN)
+
         pygame.display.flip()
         TIME_PASSED_SECONDS = clock.tick(120)
         FRAME += 1
