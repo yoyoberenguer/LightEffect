@@ -26,8 +26,9 @@ Version 2 changes :
     Shadow.py
     LightDemo.py
     
-DEMO available in the directory dist
-***** The assets directory must be in the same location than the executable file 
+DEMO available in the directory dist.
+
+*** The assets directory must be in the same location than the executable file 
 
 Have a nice journey
 
