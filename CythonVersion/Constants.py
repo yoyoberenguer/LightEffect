@@ -132,6 +132,7 @@ for effect in VOLUMES:
         j += 1
     i += 1
 
+"""
 LIGHTS = []
 from random import randint
 for r in range(10):
@@ -150,7 +151,7 @@ for r in range(10):
           VOLUMES[randint(0,2)]
           ))
 
-
+"""
 
 LIGHT1 = ('Spotlight1',                                     # light name
           light_shape,                                      # illuminated area from the source point
@@ -235,7 +236,7 @@ LIGHT9 = ('MOUSE_CURSOR', light_shape, pygame.Color(138, 222, 219, 0), light_pre
           1.8e-4, (190, 360), None, True)
 
 
-# LIGHTS = [LIGHT1, LIGHT2, LIGHT3, LIGHT4, LIGHT5, LIGHT6, LIGHT7, LIGHT8, LIGHT9]
+LIGHTS = [LIGHT1, LIGHT2, LIGHT3, LIGHT4, LIGHT5, LIGHT6, LIGHT7, LIGHT8, LIGHT9]
 
 # LIGHTS = [LIGHT1]
 
