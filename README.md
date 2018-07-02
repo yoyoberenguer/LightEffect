@@ -28,6 +28,13 @@ Version 2 changes :
     Shadow.py
     LightDemo.py
     
+# Scenes 
+
+![alt text](https://github.com/yoyoberenguer/LightEffect/blob/master/1.png)  ![alt text](https://github.com/yoyoberenguer/LightEffect/blob/master/11.png)
+
+![alt text](https://github.com/yoyoberenguer/LightEffect/blob/master/2.png)  ![alt text](https://github.com/yoyoberenguer/LightEffect/blob/master/22.png)
+
+    
 DEMO available in the directory dist.
 
 *** The assets directory must be in the same location than the executable file 
