@@ -30,9 +30,9 @@ Version 2 changes :
     
 # Scenes 
 
-![alt text](https://github.com/yoyoberenguer/LightEffect/blob/master/1.png)  ![alt text](https://github.com/yoyoberenguer/LightEffect/blob/master/11.png)
+![alt text](https://github.com/yoyoberenguer/LightEffect/blob/master/Assets/1.png)  ![alt text](https://github.com/yoyoberenguer/LightEffect/blob/master/Assets/11.png)
 
-![alt text](https://github.com/yoyoberenguer/LightEffect/blob/master/2.png)  ![alt text](https://github.com/yoyoberenguer/LightEffect/blob/master/22.png)
+![alt text](https://github.com/yoyoberenguer/LightEffect/blob/master/Assets/2.png)  ![alt text](https://github.com/yoyoberenguer/LightEffect/blob/master/Assets/22.png)
 
     
 DEMO available in the directory dist.
