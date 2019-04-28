@@ -10,7 +10,9 @@ of the illuminated area (radial masks).
 The class can be easily implemented into a 2D game (top down or horizontal/vertical scrolling) to enhanced
 the lighting ambiance.
 
-Youtube Video:  https://youtu.be/uawpBMfwAp4
+Youtube Video (per pixel):  https://youtu.be/uawpBMfwAp4
+
+Youtube Video https://youtu.be/2xKcPkDK5po
 
 ![alt text](https://github.com/yoyoberenguer/LightEffect/blob/master/ScreenDump.png)
 
