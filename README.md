@@ -1,47 +1,54 @@
 
 
-# LightEffect
+# Light Effect
 
 This program creates 2D light effects onto a pygame surface/image (32 bit PNG file encoded with
-alpha channels transparency) and generate shadow.
+alpha channels transparency) and **generate shadow**.
+
 The files radial4.png, RadialTrapezoid, RadialWarning are controlling the shape and light intensity
 of the illuminated area (radial masks).
 
-The class can be easily implemented into a 2D game (top down or horizontal/vertical scrolling) to enhanced
+This algorithm can be easily implemented into a 2D game (top down or horizontal / vertical scrolling) to enhanced
 the lighting ambiance.
 
-Youtube Video (per pixel):  https://youtu.be/uawpBMfwAp4
+## Youtube Demos
 
-Youtube Video https://youtu.be/2xKcPkDK5po
+Source                   | Link
+-------------------------|-------------------------------
+Youtube Video (per pixel)|  https://youtu.be/uawpBMfwAp4
+Youtube Video            | https://youtu.be/2xKcPkDK5po
+
+## Sreenshot
 
 ![alt text](https://github.com/yoyoberenguer/LightEffect/blob/master/ScreenDump.png)
 
-Version 2 changes :
+## Version 2 
 
- - Added volumetric effect (animated smoke or plasma) in the illuminated area to set a specific ambiance.
+ 1. Added volumetric effect (animated smoke or plasma) in the illuminated area to set a specific ambiance.
         This effect can also be used for generating force field around a set point.
 
- - Added warning light (rotational lighting)
+ 2. Added warning light (rotational lighting)
 
- - Implemented shadow projection effects from a light source coordinates (See file Shadows.py for more details and
-        credit to Marcus Møller for its shadow algorithms (https://github.com/marcusmoller).
+ 3. Implemented shadow projection effects from a light source coordinates 
 
- - Code cleanup and split the code into different modules
+ 4. Code cleanup and split the code into different modules
     Constant.py
     LoadTextureFile.py
     Shadow.py
     LightDemo.py
     
-# Scenes 
+## Scenes 
 
-![alt text](https://github.com/yoyoberenguer/LightEffect/blob/master/Assets/1.png)  ![alt text](https://github.com/yoyoberenguer/LightEffect/blob/master/Assets/11.png)
+![alt text](https://github.com/yoyoberenguer/LightEffect/blob/master/Assets/1.png) 
+![alt text](https://github.com/yoyoberenguer/LightEffect/blob/master/Assets/11.png)
 
-![alt text](https://github.com/yoyoberenguer/LightEffect/blob/master/Assets/2.png)  ![alt text](https://github.com/yoyoberenguer/LightEffect/blob/master/Assets/22.png)
+![alt text](https://github.com/yoyoberenguer/LightEffect/blob/master/Assets/2.png)  
+![alt text](https://github.com/yoyoberenguer/LightEffect/blob/master/Assets/22.png)
 
     
-DEMO available in the directory dist.
+**DEMO available in the directory dist.**
 
-*** The assets directory must be in the same location than the executable file 
+Note: _The assets directory must be in the same location than the executable file_
 
 Have a nice journey
 
