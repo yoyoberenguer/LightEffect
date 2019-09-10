@@ -10,7 +10,7 @@ __status__ = "Demo"
 import pygame
 from LoadTextureFile import spread_sheet_per_pixel
 import numpy
-
+import os
 
 # Map size
 SIZE = (600, 600)
@@ -19,7 +19,9 @@ pygame.init()
 SCREEN = pygame.display.set_mode(SCREENRECT.size, pygame.RESIZABLE, 32)
 SCREEN.fill((0, 0, 0, 0))
 
-TEXTURE1 = pygame.image.load('Assets\\Base1.png').convert()
+#TEXTURE1 = pygame.image.load('Assets\\Base1.png').convert()
+TEXTURE1 = pygame.image.load(os.path.join('Assets','Base1.png')).convert()
+
 assert isinstance(TEXTURE1, pygame.Surface), 'TEXTURE1 should be a pygame.Surface, got %s ' % type(TEXTURE1)
 assert TEXTURE1.get_size() > (0, 0), 'TEXTURE1 requires dimensions > (0, 0).'
 assert TEXTURE1.get_bitsize() >= 24, \
@@ -35,7 +37,7 @@ assert isinstance(RGB1, numpy.ndarray), 'RGB1 should be a numpy.ndarray, got %s 
 assert RGB1.size > 0, 'RGB1 array size should be  > 0.'
 
 
-MASK_ALPHA = pygame.image.load('Assets\\radial4.png').convert_alpha()
+MASK_ALPHA = pygame.image.load(os.path.join('Assets','Radial4.png')).convert_alpha()
 assert isinstance(MASK_ALPHA, pygame.Surface), 'MASK_ALPHA should be a pygame.Surface, got %s ' % type(MASK_ALPHA)
 assert MASK_ALPHA.get_size() > (0, 0), \
     'MASK_ALPHA requires dimensions > (0, 0), got (%s, %s) ' % MASK_ALPHA.get_size()
@@ -43,9 +45,9 @@ assert MASK_ALPHA.get_bitsize() >= 24, \
     'MASK_ALPHA bit depth should be 24-32 bit depth pixel format, got %s ' % MASK_ALPHA.get_bitsize()
 
 # Light volumetric texture (project animated patterns)
-VOLUMES = [spread_sheet_per_pixel('Assets\\smoke1.png', 256, 8, 8),
-           spread_sheet_per_pixel('Assets\\smoke1_inv.png', 256, 8, 8),
-           spread_sheet_per_pixel('Assets\\plasma_blue.png', 128, 20, 18, False)]
+VOLUMES = [spread_sheet_per_pixel(os.path.join('Assets','smoke1.png'), 256, 8, 8),
+           spread_sheet_per_pixel(os.path.join('Assets','smoke1_inv.png'), 256, 8, 8),
+           spread_sheet_per_pixel(os.path.join('Assets','plasma_blue.png'), 128, 20, 18, False)]
 
 assert len(VOLUMES) > 0, 'VOLUMES should not be empty if you are using volumetric textures.'
 for i in range(len(VOLUMES)):
@@ -195,14 +197,14 @@ LIGHT6 = ('Spotlight6', light_shape, pygame.Color(200, 200, 10, 0),
 
 light_shape = (600, 600)
 LIGHT5 = ('Spotlight5', light_shape, pygame.Color(200, 200, 200, 0),
-          light_preparation(light_shape, pygame.image.load('Assets\\radialTrapezoid.png').convert_alpha()),
+          light_preparation(light_shape, pygame.image.load(os.path.join('Assets','RadialTrapezoid.png')).convert_alpha()),
           False, False, False, False, pygame.Color(220, 210, 212, 0), pygame.Color(20, 20, 21, 0),
           0.6e-4, SCREENRECT.center, None)
 
 # Yellow rotating light
 light7_rotation = []
 light_shape = (100, 100)
-MASK_ALPHA_ = pygame.image.load('Assets\\RadialWarning.png').convert_alpha()
+MASK_ALPHA_ = pygame.image.load(os.path.join('Assets','RadialWarning.png')).convert_alpha()
 light_area_org = pygame.transform.smoothscale(MASK_ALPHA_, light_shape)
 for r in range(360):
     light_area = pygame.transform.rotate(light_area_org.copy(), r * 6)
@@ -217,7 +219,7 @@ LIGHT7 = ('Spotlight7', light_shape, pygame.Color(120, 170, 21, 0), light7_rotat
 
 light8_rotation = []
 light_shape = (100, 100)
-MASK_ALPHA_ = pygame.image.load('Assets\\Radial4.png').convert_alpha()
+MASK_ALPHA_ = pygame.image.load(os.path.join('Assets','Radial4.png')).convert_alpha()
 light_area_org = pygame.transform.smoothscale(MASK_ALPHA_, light_shape)
 for r in range(360):
     light_area = pygame.transform.rotate(light_area_org.copy(), r * 6)
